@@ -37,6 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # adding custom application or dependcies to project
+
+    'rest_framework',
+    'elev_app',
 ]
 
 MIDDLEWARE = [
