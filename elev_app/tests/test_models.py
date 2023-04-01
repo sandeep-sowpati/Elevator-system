@@ -2,8 +2,9 @@
 
 #imports
 from django.test import TestCase
-from elev_app.models import Building, Elevator
+from elev_app.models import *
 
+from django.core.exceptions import ValidationError
 
 class BuildingTestCase(TestCase):
     '''
@@ -60,3 +61,98 @@ class ElevatorTestCase(TestCase):
 
     def test_elevator_has_correct_number(self):
         self.assertEqual(self.elevator.elevator_number, 1)
+
+
+def test_request_destination_floor_validation(self):
+    # create a building with max_floor=10
+    building = Building.objects.create(name="Test Building", max_floor=10, number_of_elevators=1)
+    # create an elevator in the building
+    elevator = Elevator.objects.first()
+
+    # try to create a request with destination_floor < 0
+    with self.assertRaises(ValidationError):
+        ElevatorRequest.objects.create(elevator=elevator, requested_floor=2, destination_floor=-1)
+
+    # try to create a request with destination_floor > max_floor
+    with self.assertRaises(ValidationError):
+        ElevatorRequest.objects.create(elevator=elevator, requested_floor=2, destination_floor=11)
+
+    # try to create a request with valid destination_floor
+    request = ElevatorRequest.objects.create(elevator=elevator, requested_floor=2, destination_floor=5)
+    self.assertEqual(request.elevator, elevator)
+    self.assertEqual(request.requested_floor, 2)
+    self.assertEqual(request.destination_floor, 5)
+#     self.assertTrue(request.is_active)
+
+
+class ElevatorRequestTestCase(TestCase):
+
+    def setUp(self):
+        self.building = Building.objects.create(name="Test Building", max_floor=10, number_of_elevators=1)
+        self.elevator = self.building.elevators.first()
+
+    def test_create_elevator_request_with_valid_destination_floor(self):
+        request = ElevatorRequest(
+            elevator=self.elevator,
+            requested_floor=5,
+            destination_floor=9,
+        )
+        request.full_clean()
+        request.save()
+        self.assertEqual(request.destination_floor, 9)
+
+    def test_destination_floor_below_zero(self):
+        with self.assertRaises(ValidationError):
+            request = ElevatorRequest(
+                elevator=self.elevator,
+                requested_floor=5,
+                destination_floor=-1,
+            )
+            request.full_clean()
+            request.save()
+
+    def test_destination_floor_above_max_floor(self):
+        with self.assertRaises(ValidationError):
+            request = ElevatorRequest(
+                elevator=self.elevator,
+                requested_floor=5,
+                destination_floor=11,
+            )
+            request.full_clean()
+            request.save()
+
+    def test_destination_floor_equals_requested_floor(self):
+        with self.assertRaises(ValidationError):
+            request = ElevatorRequest(
+                elevator=self.elevator,
+                requested_floor=5,
+                destination_floor=5,
+            )
+            request.full_clean()
+            request.save()
+
+    def test_destination_floor_equal_max_floor(self):
+        request = ElevatorRequest(
+            elevator=self.elevator,
+            requested_floor=5,
+            destination_floor=6,
+        )
+        request.full_clean()
+        request.save()
+        self.assertEqual(ElevatorRequest.objects.count(), 1)
+
+    def test_destination_floor_between_zero_and_max_floor(self):
+        ElevatorRequest.objects.create(
+            elevator=self.elevator,
+            requested_floor=5,
+            destination_floor=3,
+        )
+        self.assertEqual(ElevatorRequest.objects.count(), 1)
+
+    def test_destination_floor_equal_zero(self):
+        ElevatorRequest.objects.create(
+            elevator=self.elevator,
+            requested_floor=5,
+            destination_floor=0,
+        )
+        self.assertEqual(ElevatorRequest.objects.count(), 1)

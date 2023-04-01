@@ -3,6 +3,10 @@ from django.db.models.signals import post_save
 
 from django.dispatch import receiver
 
+
+from django.core.exceptions import ValidationError
+
+
 # Create your models here.
 
 
@@ -56,3 +60,35 @@ def create_elevators(sender, instance, created, **kwargs):
     if created:
         for i in range(instance.number_of_elevators):
             Elevator.objects.create(building=instance, elevator_number=i+1)
+
+
+class ElevatorRequest(models.Model):
+    '''
+    Model fo Elevator and to get the details of the particular adapter.
+    '''
+    elevator = models.ForeignKey(Elevator,on_delete=models.CASCADE)
+
+    requested_floor   = models.IntegerField()
+    #added
+    destination_floor = models.IntegerField()
+
+    request_time = models.DateTimeField(auto_now_add=True)
+
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self) -> str:
+        return f'{self.elevator} is moving towards {self.destination_floor}'
+
+    def clean(self):
+        errors = {}
+        if self.destination_floor < 0:
+            errors['destination_floor'] = 'The Destiantion must be more than 0.'
+
+        elif self.destination_floor > self.elevator.building.max_floor:
+            errors['destination_floor']  = f'The Destiantion must be less than {self.elevator.building.max_floor}.'
+
+        elif self.requested_floor== self.destination_floor:
+            errors['destination_floor'] = 'Requested Floor and the Destiantion Floor cant be the same'
+
+        if errors:
+            raise ValidationError(errors)
