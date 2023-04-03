@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 
 from django.dispatch import receiver
 
@@ -61,12 +61,25 @@ def create_elevators(sender, instance, created, **kwargs):
         for i in range(instance.number_of_elevators):
             Elevator.objects.create(building=instance, elevator_number=i+1)
 
+@receiver(post_save, sender=Elevator)
+def update_building_elevator_count_on_create(sender, instance, created, **kwargs):
+    if created:
+        building = instance.building
+        building.number_of_elevators = building.elevators.count()
+        building.save()
+
+@receiver(pre_delete, sender=Elevator)
+def update_building_elevator_count_on_delete(sender, instance, **kwargs):
+    building = instance.building
+    building.number_of_elevators = building.elevators.count()
+    building.save()
+
 
 class ElevatorRequest(models.Model):
     '''
     Model fo Elevator and to get the details of the particular adapter.
     '''
-    elevator = models.ForeignKey(Elevator,on_delete=models.CASCADE)
+    elevator = models.ForeignKey(Elevator,on_delete=models.CASCADE,related_name='requests')
 
     requested_floor   = models.IntegerField()
     #added

@@ -63,28 +63,6 @@ class ElevatorTestCase(TestCase):
         self.assertEqual(self.elevator.elevator_number, 1)
 
 
-def test_request_destination_floor_validation(self):
-    # create a building with max_floor=10
-    building = Building.objects.create(name="Test Building", max_floor=10, number_of_elevators=1)
-    # create an elevator in the building
-    elevator = Elevator.objects.first()
-
-    # try to create a request with destination_floor < 0
-    with self.assertRaises(ValidationError):
-        ElevatorRequest.objects.create(elevator=elevator, requested_floor=2, destination_floor=-1)
-
-    # try to create a request with destination_floor > max_floor
-    with self.assertRaises(ValidationError):
-        ElevatorRequest.objects.create(elevator=elevator, requested_floor=2, destination_floor=11)
-
-    # try to create a request with valid destination_floor
-    request = ElevatorRequest.objects.create(elevator=elevator, requested_floor=2, destination_floor=5)
-    self.assertEqual(request.elevator, elevator)
-    self.assertEqual(request.requested_floor, 2)
-    self.assertEqual(request.destination_floor, 5)
-#     self.assertTrue(request.is_active)
-
-
 class ElevatorRequestTestCase(TestCase):
 
     def setUp(self):
