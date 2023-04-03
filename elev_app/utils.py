@@ -13,7 +13,7 @@ class RunThread(Thread):
 
 
 
-def move_elevator(elevator_object : Elevator,elevator_system : Building):
+def move_elevator(elevator_object : Elevator,building : Building):
   '''
   Filter all the requests for a given elevator
   move it according to the requests.
@@ -69,25 +69,25 @@ def move_elevator(elevator_object : Elevator,elevator_system : Building):
     elev_request.save()
 
 
-def check_elevator_system(elevator_system : Building):
+def check_building(building : Building):
   '''
   Filter all the elevators running in an elevator system
   and process their requests one by one.
   '''
   elevators_running = Elevator.objects.filter(
-    elevator_system = elevator_system,
+    building = building,
     is_operational = True,
   )
 
   for elevator in elevators_running:
-    move_elevator(elevator_object = elevator,elevator_system = elevator_system)
+    move_elevator(elevator_object = elevator,building = building)
 
 
 def final_run():
   '''
   Run the process for all elevator systems
   '''
-  elevator_systems = Building.objects.all().order_by('id')
+  buildings = Building.objects.all().order_by('id')
 
-  for elevator_system in elevator_systems:
-    check_elevator_system(elevator_system = elevator_system)
+  for building in buildings:
+    check_building(building = building)
